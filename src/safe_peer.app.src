@@ -1,0 +1,14 @@
+{application, safe_peer,
+ [
+  {description, "Run potentially crashy code on isolated hidden peer nodes"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {mod, {safe_peer_app, []}},
+  {env,
+   [
+    {default_timeout_ms, 5000},
+    {peer_args, ["-hidden"]},
+    {peer_name_prefix, "safepeer"}
+   ]}
+ ]}.
