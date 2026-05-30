@@ -1,5 +1,12 @@
 -module(safe_peer_sup).
 -behaviour(supervisor).
+-author("Steven Joseph <steven@stevenjoseph.in>").
+
+-copyright("Steven Joseph <steven@stevenjoseph.in>").
+
+-license("Apache-2.0").
+
+-include_lib("kernel/include/logger.hrl").
 
 -export([start_link/0]).
 -export([init/1]).

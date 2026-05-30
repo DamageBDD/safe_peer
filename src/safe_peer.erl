@@ -1,5 +1,13 @@
 -module(safe_peer).
 
+-author("Steven Joseph <steven@stevenjoseph.in>").
+
+-copyright("Steven Joseph <steven@stevenjoseph.in>").
+
+-license("Apache-2.0").
+
+-include_lib("kernel/include/logger.hrl").
+
 -export([wrap/1, wrap/2, wrap/3]).
 
 -define(DEFAULT_TIMEOUT_MS, 5000).
@@ -57,7 +65,7 @@ do_wrap(MFA, TimeoutMs, Opts) ->
                 call_on_peer(PeerPid, PeerNode, MFA, TimeoutMs)
             after
                 %% Always try to stop peer; it's fine if already dead.
-                catch peer:stop(PeerPid)
+                safe_peer_stop(PeerPid)
             end;
         {error, Reason} ->
             {error, {peer_start_failed, Reason}}
@@ -93,13 +101,13 @@ call_on_peer(PeerPid, PeerNode, {M,F,A}, TimeoutMs) ->
         {nodedown, PeerNode} ->
             %% Peer died: treat as NIF crash / halt / hard failure.
             monitor_node(PeerNode, false),
-            catch exit(Worker, kill),
+            safe_worker_kill(Worker),
             {error, noconnection}
     after TimeoutMs ->
             %% Timeout: kill worker and peer.
             monitor_node(PeerNode, false),
-            catch exit(Worker, kill),
-            catch peer:stop(PeerPid),
+            safe_worker_kill(Worker),
+            safe_peer_stop(PeerPid),
             {error, timeout}
     end.
 
@@ -111,3 +119,19 @@ normalize_rpc_result({'badrpc', Reason}) ->
     {error, {badrpc, Reason}};
 normalize_rpc_result(Res) ->
     {ok, Res}.
+
+safe_peer_stop(PeerPid) ->
+    try
+        peer:stop(PeerPid)
+    catch
+        _:_ ->
+            ok
+    end.
+
+safe_worker_kill(Worker) ->
+    try
+        exit(Worker, kill)
+    catch
+        _:_ ->
+            ok
+    end.
